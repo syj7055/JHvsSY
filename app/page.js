@@ -461,8 +461,7 @@ export default function GameRoom() {
                     return (
                     <div key={color + val} style={{ gridColumn: val, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
                         {/* 💡 폰트를 clamp로 묶어 가로 축소 시 자연스럽게 작아지게 만듦 */}
-                        {renderCard( { color, value: valueStr }, { width: '100%', height: 'auto', aspectRatio: '2/3', fontSize: 'clamp(0.8rem, 1.2vw, 1.8rem)' }, isUsed )}
-                    </div>
+                        {renderCard( { color, value: valueStr }, { width: '100%', height: 'auto', aspectRatio: '2/3', fontSize: 'clamp(0.8rem, 1.2vw, 1.8rem)', visibility: isUsed ? 'hidden' : 'visible' }, isUsed )}                    </div>
                     );
                 });
                 })}
