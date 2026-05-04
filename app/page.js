@@ -216,7 +216,7 @@ export default function GameRoom() {
     }
   };
 
-  // ✅ 오리지널 카드 색상 (롤백 완료)
+  // ✅ 카드 본연의 오리지널 색상 유지 (롤백)
   const getCardStyle = (color, isDisabled = false, isSelected = false) => {
     const themes = {
       Fear: { bg: '#0A2932', text: '#28A4DE' },
@@ -229,41 +229,30 @@ export default function GameRoom() {
     return {
       backgroundColor: t.bg,
       color: t.text,
-      borderRadius: '0.6vmin',
+      borderRadius: '0.8vmin',
       border: isSelected ? '0.4vmin solid #27ae60' : '0.2vmin solid rgba(0,0,0,0.3)',
-      boxShadow: '0.2vmin 0.3vmin 0.5vmin rgba(0,0,0,0.4)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontWeight: 'bold',
       cursor: isDisabled ? 'not-allowed' : 'pointer',
       opacity: isDisabled ? 0.3 : 1,
+      boxShadow: '0.2vmin 0.3vmin 0.5vmin rgba(0,0,0,0.3)',
       userSelect: 'none',
       boxSizing: 'border-box'
     };
   };
 
-  // ✅ Rank 전용 색상 지정 (새로 요청하신 컬러)
+  // ✅ Rank 순서 동그라미에만 들어가는 새로운 색상
   const getRankCircleColor = (suit) => {
     const colors = { Fear: '#35A5DC', Ruse: '#FF7628', Manipulation: '#343A35' };
     return colors[suit] || '#ccc';
   };
 
-  // ✅ 궁극의 카드 렌더링 함수 (어떤 컨테이너에 들어가도 완벽히 비율 유지 & 폰트 크기 자동 조절)
-  const renderCard = (card, isDisabled = false, isSelected = false, onClick = null) => {
+  // ✅ 절대 사이즈(vmin) 렌더링 함수 (비율 완벽 고정)
+  const renderCard = (card, customStyle = {}, isDisabled = false, isSelected = false, onClick = null) => {
     if (!card) return null;
     return (
-      <div style={{ 
-        width: '100%', height: '100%', 
-        display: 'flex', justifyContent: 'center', alignItems: 'center', 
-        minWidth: 0, minHeight: 0 
-      }}>
-        <div onClick={onClick} style={{ 
-          ...getCardStyle(card.color, isDisabled, isSelected),
-          maxHeight: '100%', maxWidth: '100%', 
-          aspectRatio: '2/3', 
-          containerType: 'size', // 카드 내부 상대적 폰트 크기 조절용
-        }}>
-          <span style={{ fontSize: '45cqh', pointerEvents: 'none' }}>{card.value}</span>
-        </div>
+      <div onClick={onClick} style={{ ...getCardStyle(card.color, isDisabled, isSelected), ...customStyle, flexShrink: 0 }}>
+        {card.value}
       </div>
     );
   };
@@ -283,27 +272,19 @@ export default function GameRoom() {
     );
   }
 
-  // Phase 1: 카드 12장 분배 -> 4장 선택 (6x2 그리드 배열 완벽 적용)
+  // Phase 1: 카드 12장 분배 -> 4장 선택 (6x2 그리드 배열 완료)
   if (state.phase === 'give_cards') {
     return (
-      <div style={{ padding: '2vmin', width: '80vw', height: '90vh', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h2 style={{ fontSize: '3.5vmin', margin: '1vmin 0' }}>Select 4 cards to give to London</h2>
-        <p style={{ fontSize: '2vmin', marginBottom: '2vmin' }}>Status: {state.givenToCity[myRole === 'Jekyll' ? 'Hyde' : 'Jekyll']?.length === 4 ? "Ready" : "Selecting"}</p>
+      <div style={{ padding: '2vmin', width: '80vw', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <h2 style={{ fontSize: '4vmin', margin: '2vmin 0' }}>Select 4 cards to give to London</h2>
+        <p style={{ fontSize: '2.5vmin', marginBottom: '3vmin' }}>Waiting for opponent status: {state.givenToCity[myRole === 'Jekyll' ? 'Hyde' : 'Jekyll']?.length === 4 ? "Ready" : "Selecting"}</p>
         
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(6, 1fr)', 
-          gridTemplateRows: 'repeat(2, 1fr)',
-          gap: '2vmin', 
-          width: '100%',
-          flex: 1,
-          minHeight: 0
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '2vmin', justifyItems: 'center', margin: '2vmin auto' }}>
           {state.hands[myRole].map((card, idx) => {
             const isSelected = selectedForCity.includes(idx);
             return (
-              <div key={idx} style={{ width: '100%', height: '100%' }}>
-                {renderCard(card, false, isSelected, () => {
+              <div key={idx}>
+                {renderCard(card, { width: '12vmin', height: '18vmin', fontSize: '7vmin' }, false, isSelected, () => {
                   if (isSelected) setSelectedForCity(prev => prev.filter(i => i !== idx));
                   else if (selectedForCity.length < 4) setSelectedForCity(prev => [...prev, idx]);
                 })}
@@ -311,19 +292,19 @@ export default function GameRoom() {
             );
           })}
         </div>
-        <button onClick={confirmGiveCards} disabled={selectedForCity.length !== 4} style={{ padding: '2vmin 4vmin', fontSize: '2.5vmin', cursor: 'pointer', borderRadius: '1vmin', marginTop: '3vmin' }}>Confirm</button>
+        <button onClick={confirmGiveCards} disabled={selectedForCity.length !== 4} style={{ padding: '2vmin 4vmin', fontSize: '2.5vmin', cursor: 'pointer', borderRadius: '1vmin', marginTop: '3vmin' }}>Confirm 4 Cards</button>
       </div>
     );
   }
 
-  // Phase 2: 본 게임 (완벽 비율 스케일링 적용)
+  // Phase 2: 본 게임 (완벽 비율 스케일링 vmin 적용)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', boxSizing: 'border-box', overflow: 'hidden', padding: '1.5vmin', gap: '1.5vmin' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', boxSizing: 'border-box', overflow: 'hidden', padding: '2vmin', gap: '2vmin' }}>
       
       {/* 헤더 바 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '0.2vmin solid rgba(0,0,0,0.2)', paddingBottom: '1vmin', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '0.3vmin solid rgba(0,0,0,0.2)', paddingBottom: '1vmin', flexShrink: 0 }}>
         <h2 style={{ margin: 0, fontSize: '3vmin' }}>You are {myRole}</h2>
-        <div style={{ display: 'flex', gap: '1vmin' }}>
+        <div style={{ display: 'flex', gap: '1.5vmin' }}>
           <button onClick={() => initNewGame('Jekyll')} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#333', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead)</button>
           <button onClick={() => initNewGame('Hyde')} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#555', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead)</button>
         </div>
@@ -332,49 +313,48 @@ export default function GameRoom() {
         </h2>
       </div>
 
-      {/* 메인 레이아웃 (좌측 65% / 우측 35%) */}
-      <div style={{ display: 'flex', gap: '1.5vmin', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', gap: '2vmin', flex: 1, minHeight: 0 }}>
         
         {/* ===== MAIN COLUMN (좌측 65%) ===== */}
-        <div style={{ width: '65%', display: 'flex', flexDirection: 'column', gap: '1.5vmin', height: '100%' }}>
+        <div style={{ width: '65%', display: 'flex', flexDirection: 'column', gap: '2vmin', height: '100%' }}>
           
-          {/* 1. 상단: Current Trick & Rank (비율 축소 flex: 1) */}
-          <div style={{ display: 'flex', gap: '1.5vmin', flex: 1, minHeight: 0 }}>
+          {/* 상단: Current Trick & Suit Rank */}
+          <div style={{ display: 'flex', gap: '2vmin', flexShrink: 0 }}>
             
-            <div style={{ flex: 2.5, backgroundColor: 'rgba(0,0,0,0.1)', padding: '1.5vmin', borderRadius: '1vmin', display: 'flex', flexDirection: 'column' }}>
+            {/* Current Trick (카드 크기 약간 축소 반영) */}
+            <div style={{ flex: 2.5, backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', display: 'flex', flexDirection: 'column' }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <h3 style={{ margin: 0, fontSize: '2vmin' }}>Current Trick</h3>
+                 <h3 style={{ margin: 0, fontSize: '2.2vmin' }}>Current Trick</h3>
                  {state.turn === 'London' && state.currentTrick.length < 3 && (
-                   <button onClick={playLondonCard} style={{ padding: '0.8vmin 1.5vmin', fontSize: '1.5vmin', backgroundColor: '#e67e22', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>Reveal London</button>
+                   <button onClick={playLondonCard} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', backgroundColor: '#e67e22', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>Reveal London</button>
                  )}
                </div>
                
-               <div style={{ display: 'flex', gap: '2vmin', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0, marginTop: '1vmin' }}>
+               <div style={{ display: 'flex', gap: '3vmin', justifyContent: 'center', alignItems: 'center', margin: '2vmin 0' }}>
                  {state.currentTrick.map((t, idx) => (
-                   <div key={idx} style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                     <div style={{ fontSize: '1.5vmin', marginBottom: '0.5vmin', flexShrink: 0 }}>{t.playedBy}</div>
-                     <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', justifyContent: 'center' }}>
-                        {renderCard(t.card)}
-                     </div>
+                   <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                     <div style={{ fontSize: '1.8vmin', marginBottom: '1vmin' }}>{t.playedBy}</div>
+                     {renderCard(t.card, { width: '10vmin', height: '15vmin', fontSize: '6vmin' })}
                    </div>
                  ))}
                </div>
                
                {state.currentTrick.length === 3 && (
-                  <div style={{ textAlign: 'center', marginTop: '1vmin', flexShrink: 0 }}>
-                    <button onClick={() => resolveTrick('Jekyll')} style={{ fontSize: '1.5vmin', padding: '0.6vmin 1.2vmin', cursor: 'pointer' }}>Jekyll Won</button>
-                    <button onClick={() => resolveTrick('London')} style={{ fontSize: '1.5vmin', padding: '0.6vmin 1.2vmin', cursor: 'pointer', margin: '0 1vmin' }}>London Won</button>
-                    <button onClick={() => resolveTrick('Hyde')} style={{ fontSize: '1.5vmin', padding: '0.6vmin 1.2vmin', cursor: 'pointer' }}>Hyde Won</button>
+                  <div style={{ textAlign: 'center', marginTop: 'auto' }}>
+                    <button onClick={() => resolveTrick('Jekyll')} style={{ fontSize: '1.5vmin', padding: '0.8vmin 1.5vmin', cursor: 'pointer' }}>Jekyll Won</button>
+                    <button onClick={() => resolveTrick('London')} style={{ fontSize: '1.5vmin', padding: '0.8vmin 1.5vmin', cursor: 'pointer', margin: '0 1vmin' }}>London Won</button>
+                    <button onClick={() => resolveTrick('Hyde')} style={{ fontSize: '1.5vmin', padding: '0.8vmin 1.5vmin', cursor: 'pointer' }}>Hyde Won</button>
                   </div>
                )}
             </div>
 
-            <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.3)', padding: '1.5vmin', borderRadius: '1vmin', display: 'flex' }}>
+            {/* Rank 영역 (타원 안되게 고정) */}
+            <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.3)', padding: '2vmin', borderRadius: '1.5vmin', display: 'flex' }}>
                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5vmin' }}>
-                  <h4 style={{ margin: 0, fontSize: '1.8vmin' }}>Rank</h4>
+                  <h4 style={{ margin: 0, fontSize: '2vmin' }}>Rank</h4>
                   {[0, 1, 2].map((slotIndex) => (
                     <div key={slotIndex} onDragOver={e => e.preventDefault()} onDrop={e => handleDrop(e, 'rank', { index: slotIndex })}
-                         style={{ width: '5vmin', height: '5vmin', border: '0.3vmin dashed #666', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                         style={{ width: '6vmin', height: '6vmin', border: '0.3vmin dashed #666', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {state.rankSlots[slotIndex] && (
                         <div draggable onDragStart={e => handleDragStart(e, 'suit', { fromSlot: slotIndex, suit: state.rankSlots[slotIndex] })}
                              style={{ width: '100%', height: '100%', borderRadius: '50%', backgroundColor: getRankCircleColor(state.rankSlots[slotIndex]), cursor: 'grab' }} />
@@ -383,37 +363,37 @@ export default function GameRoom() {
                   ))}
                </div>
                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5vmin', borderLeft: '0.2vmin solid #ccc' }}>
-                  <h4 style={{ margin: 0, fontSize: '1.8vmin' }}>Unassigned</h4>
+                  <h4 style={{ margin: 0, fontSize: '2vmin' }}>Unassigned</h4>
                   <div onDragOver={e => e.preventDefault()} onDrop={e => handleDrop(e, 'rank', { index: 'unassigned' })} style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5vmin' }}>
                     {state.unassignedSuits.map(suit => (
                       <div key={suit} draggable onDragStart={e => handleDragStart(e, 'suit', { fromSlot: 'unassigned', suit })}
-                           style={{ width: '5vmin', height: '5vmin', borderRadius: '50%', backgroundColor: getRankCircleColor(suit), cursor: 'grab', flexShrink: 0 }} />
+                           style={{ width: '6vmin', height: '6vmin', borderRadius: '50%', backgroundColor: getRankCircleColor(suit), cursor: 'grab', flexShrink: 0 }} />
                     ))}
                   </div>
                </div>
             </div>
           </div>
 
-          {/* 2. 중단: Played Tricks (비율 대폭 확대 flex: 3) */}
-          <div style={{ display: 'flex', gap: '1.5vmin', flex: 3, minHeight: 0 }}>
+          {/* 중단: Played Tricks (영역 비율 대폭 확대, 카드 크기 고정) */}
+          <div style={{ display: 'flex', gap: '2vmin', flex: 1, minHeight: 0 }}>
             {['Jekyll', 'London', 'Hyde'].map(owner => (
               <div key={owner} 
                    onDragOver={e => e.preventDefault()} 
                    onDrop={e => handleDrop(e, 'player_tricks', { target: owner })}
-                   style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.05)', padding: '1.5vmin', borderRadius: '1vmin', display: 'flex', flexDirection: 'column' }}>
-                <h4 style={{ margin: '0 0 1.5vmin 0', textAlign: 'center', fontSize: '2vmin', flexShrink: 0 }}>{owner} Tricks</h4>
+                   style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.05)', padding: '2vmin', borderRadius: '1.5vmin', overflowY: 'auto' }}>
+                <h4 style={{ margin: '0 0 2vmin 0', textAlign: 'center', fontSize: '2vmin' }}>{owner} Tricks</h4>
                 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1vmin', alignContent: 'start', overflowY: 'auto', flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1vmin', alignContent: 'start' }}>
                   {state.playedTricks[owner].map((trickArr, idx) => {
                     const isLastLondonTrick = owner === 'London' && idx === state.playedTricks.London.length - 1;
                     return (
                       <div key={idx} 
                            draggable={isLastLondonTrick}
                            onDragStart={e => isLastLondonTrick && handleDragStart(e, 'london_trick', {})}
-                           style={{ display: 'flex', gap: '0.3vmin', padding: '0.5vmin', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '0.8vmin', cursor: isLastLondonTrick ? 'grab' : 'default', height: '8vmin' }}>
+                           style={{ display: 'flex', gap: '0.3vmin', padding: '0.5vmin', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '0.8vmin', cursor: isLastLondonTrick ? 'grab' : 'default', justifyContent: 'center' }}>
                         {trickArr.map((t, i) => 
-                           // 딴 트릭 카드는 박스 안에 맞춰서 렌더링
-                           <div key={i} style={{ width: '5vmin', height: '100%' }}>{renderCard(t.card)}</div>
+                          // 딴 트릭 카드의 절대적 크기 고정
+                          renderCard(t.card, { width: '4vmin', height: '6vmin', fontSize: '2.5vmin', borderWidth: '0.2vmin' })
                         )}
                       </div>
                     );
@@ -423,46 +403,44 @@ export default function GameRoom() {
             ))}
           </div>
 
-          {/* 3. 하단: My Hand (비율 대폭 축소 flex: 0.8) */}
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '1vmin', borderRadius: '1vmin', flex: 0.8, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-            <h4 style={{ margin: '0 0 0.5vmin 0', fontSize: '1.8vmin', flexShrink: 0 }}>My Hand</h4>
-            <div style={{ display: 'flex', gap: '1vmin', flex: 1, minHeight: 0, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+          {/* 하단: My Hand (영역 비율 축소, 카드 크기 조정) */}
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '1.5vmin', borderRadius: '1.5vmin', flexShrink: 0 }}>
+            <h4 style={{ margin: '0 0 1vmin 0', fontSize: '2vmin' }}>My Hand</h4>
+            <div style={{ display: 'flex', gap: '1vmin', flexWrap: 'nowrap', overflowX: 'auto', alignItems: 'center' }}>
                {state.hands[myRole].map((card, idx) => 
-                  <div key={idx} style={{ height: '100%' }}>
-                     {renderCard(card, state.turn !== myRole && !exchangeMode, false, () => playOrExchangeCard(idx))}
-                  </div>
+                  renderCard(card, { width: '8vmin', height: '12vmin', fontSize: '5vmin' }, state.turn !== myRole && !exchangeMode, false, () => playOrExchangeCard(idx))
                )}
             </div>
           </div>
         </div>
 
         {/* ===== SIDE COLUMN (우측 35%) ===== */}
-        <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '1.5vmin', borderLeft: '0.2vmin solid rgba(0,0,0,0.1)', paddingLeft: '1.5vmin', height: '100%' }}>
+        <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '2vmin', borderLeft: '0.2vmin solid rgba(0,0,0,0.1)', paddingLeft: '2vmin', height: '100%' }}>
           
-          {/* 1영역: 트랙 (flex: 1) */}
-          <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.4)', padding: '1.5vmin', borderRadius: '1vmin', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <button onClick={resetTrackOnly} style={{ position: 'absolute', top: '1vmin', right: '1vmin', padding: '0.6vmin 1.2vmin', fontSize: '1.2vmin', cursor: 'pointer' }}>Reset Track</button>
-            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '2vmin' }}>
+          {/* 1영역: 트랙 (위아래 여백 대폭 증가) */}
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.4)', padding: '4vmin 2vmin', borderRadius: '1.5vmin', position: 'relative', flexShrink: 0 }}>
+            <button onClick={resetTrackOnly} style={{ position: 'absolute', top: '1vmin', right: '1.5vmin', padding: '0.6vmin 1.2vmin', fontSize: '1.2vmin', cursor: 'pointer' }}>Reset Track</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '3vmin' }}>
                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '0.4vmin', backgroundColor: '#8b7355', zIndex: 1 }} />
                {[0,1,2,3,4,5,6,7,8,9,10].map(step => {
                   let text = '';
                   if (step === 2) text = 'I'; else if (step === 3) text = 'II'; else if (step === 4) text = 'III'; else if (step === 5) text = 'IV';
                   return (
                     <div key={step} onDragOver={e => e.preventDefault()} onDrop={e => handleDrop(e, 'track', { index: step })}
-                         style={{ width: '3.5vmin', height: '3.5vmin', backgroundColor: '#eaddcf', border: '0.3vmin solid #8b7355', borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5vmin' }}>
+                         style={{ width: '4vmin', height: '4vmin', backgroundColor: '#eaddcf', border: '0.3vmin solid #8b7355', borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8vmin', fontFamily: 'Georgia, serif' }}>
                       {text}
-                      {state.syPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'sy'})} style={{position:'absolute', top:'-3.5vmin', background:'#1B375E', color:'#fff', padding:'0.3vmin 0.6vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>SY</div>}
-                      {state.jhPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'jh'})} style={{position:'absolute', bottom:'-3.5vmin', background:'#333636', color:'#fff', padding:'0.3vmin 0.6vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>JH</div>}
+                      {state.syPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'sy'})} style={{position:'absolute', top:'-4vmin', background:'#1B375E', color:'#fff', padding:'0.4vmin 0.8vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>SY</div>}
+                      {state.jhPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'jh'})} style={{position:'absolute', bottom:'-4vmin', background:'#333636', color:'#fff', padding:'0.4vmin 0.8vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>JH</div>}
                     </div>
                   );
                })}
             </div>
           </div>
 
-          {/* 2영역: 카드 그리드 Tracker (영역 완벽하게 꽉 차게 flex: 3) */}
-          <div style={{ flex: 3, backgroundColor: 'rgba(0,0,0,0.1)', padding: '1.5vmin', borderRadius: '1vmin', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-             <h4 style={{ margin: '0 0 1.5vmin 0', fontSize: '2vmin', flexShrink: 0 }}>Card Tracker</h4>
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '0.8vmin', flex: 1, minHeight: 0 }}>
+          {/* 2영역: 카드 그리드 Tracker (화면 꽉 차게, Potion 비율 완벽 유지) */}
+          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+             <h4 style={{ margin: '0 0 2vmin 0', fontSize: '2vmin' }}>Card Tracker</h4>
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '1vmin', flex: 1 }}>
                {['Fear', 'Ruse', 'Manipulation', 'Potion'].map((color) => {
                  const isPotion = color === 'Potion';
                  const startVal = isPotion ? 3 : 1;
@@ -477,8 +455,9 @@ export default function GameRoom() {
                                   allPlayed.some(t => t.card.color === color && t.card.value == valueStr);
                    
                    return (
-                     <div key={color + val} style={{ gridColumn: val, display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 0, minHeight: 0 }}>
-                        {renderCard({ color, value: valueStr }, isUsed)}
+                     <div key={color + val} style={{ gridColumn: val, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        {/* Tracker 안의 카드는 Potion 포함 모든 카드가 엄격하게 같은 크기를 가짐 */}
+                        {renderCard( { color, value: valueStr }, { width: '4.5vmin', height: '6.7vmin', fontSize: '2.5vmin' }, isUsed )}
                      </div>
                    );
                  });
@@ -486,23 +465,23 @@ export default function GameRoom() {
              </div>
           </div>
 
-          {/* 3영역: 런던 덱 교환 (flex: 0.6) */}
-          <div style={{ flex: 0.6, backgroundColor: 'rgba(255,255,255,0.3)', padding: '1vmin', borderRadius: '1vmin', display: 'flex', alignItems: 'center', gap: '1vmin', flexShrink: 0 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <h4 style={{ margin: '0 0 0.5vmin 0', fontSize: '1.5vmin' }}>London Given</h4>
-              <div style={{ display: 'flex', gap: '0.5vmin', flex: 1, minHeight: 0 }}>
+          {/* 3영역: 런던 덱 교환 */}
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.3)', padding: '1.5vmin', borderRadius: '1.5vmin', display: 'flex', alignItems: 'center', gap: '2vmin', flexShrink: 0 }}>
+            <div>
+              <h4 style={{ margin: '0 0 1vmin 0', fontSize: '1.8vmin' }}>London Given</h4>
+              <div style={{ display: 'flex', gap: '0.8vmin' }}>
                 {state.givenToCity[myRole].map((c, i) => 
-                  <div key={i} style={{ height: '100%' }}>{renderCard(c)}</div>
+                  renderCard(c, { width: '4vmin', height: '6vmin', fontSize: '2.5vmin' })
                 )}
               </div>
             </div>
 
-            <div style={{ textAlign: 'center', padding: '1vmin', backgroundColor: exchangeMode ? '#ffeaa7' : 'transparent', border: '0.2vmin dashed #333', flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRadius: '0.5vmin' }}>
-              <h4 style={{ margin: '0 0 0.5vmin 0', fontSize: '1.5vmin' }}>London Deck ({state.cityDeck.length})</h4>
+            <div style={{ textAlign: 'center', padding: '1.5vmin', backgroundColor: exchangeMode ? '#ffeaa7' : 'transparent', border: '0.3vmin dashed #333', flex: 1, borderRadius: '1vmin' }}>
+              <h4 style={{ margin: '0 0 1vmin 0', fontSize: '1.8vmin' }}>London Deck ({state.cityDeck.length})</h4>
               {exchangeMode ? (
-                 <p style={{ margin: 0, fontSize: '1.2vmin', color: '#d35400' }}>Select to exchange or <span onClick={() => setExchangeMode(false)} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Cancel</span></p>
+                 <p style={{ margin: 0, fontSize: '1.5vmin', color: '#d35400' }}>Select to exchange or <span onClick={() => setExchangeMode(false)} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Cancel</span></p>
               ) : (
-                 <button onClick={() => setExchangeMode(true)} disabled={state.cityDeck.length === 0} style={{ padding: '0.5vmin 1vmin', fontSize: '1.2vmin', cursor: 'pointer', borderRadius: '0.5vmin' }}>Exchange Card</button>
+                 <button onClick={() => setExchangeMode(true)} disabled={state.cityDeck.length === 0} style={{ padding: '0.8vmin 1.5vmin', fontSize: '1.5vmin', cursor: 'pointer', borderRadius: '0.5vmin' }}>Exchange Card</button>
               )}
             </div>
           </div>
