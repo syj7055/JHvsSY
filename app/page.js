@@ -120,7 +120,10 @@ export default function GameRoom() {
   };
 
   const playOrExchangeCard = async (cardIndex) => {
-    const state = { ...game.game_state };
+    // 플레이 직전에 무조건 서버의 가장 최신 상태를 불러옴
+    const { data } = await supabase.from('games').select('game_state').eq('id', game.id).single();
+    if (!data) return;
+    const state = data.game_state;
     const myHand = [...state.hands[myRole]];
 
     if (exchangeMode) {
@@ -149,9 +152,12 @@ export default function GameRoom() {
 
     await supabase.from('games').update({ game_state: state }).eq('id', game.id);
   };
-
+  
   const playLondonCard = async () => {
-    const state = { ...game.game_state };
+    const { data } = await supabase.from('games').select('game_state').eq('id', game.id).single();
+    if (!data) return;
+    const state = data.game_state;
+
     if (state.turn !== 'London' || state.cityDeck.length === 0) return;
 
     const playedCard = state.cityDeck.shift(); 
@@ -165,7 +171,13 @@ export default function GameRoom() {
   };
 
   const resolveTrick = async (winner) => {
-    const state = { ...game.game_state };
+    const { data } = await supabase.from('games').select('game_state').eq('id', game.id).single();
+    if (!data) return;
+    const state = data.game_state;
+
+    // 이미 판정이 끝난 트릭이면 무시 (더블 클릭 방지용 안전장치)
+    if (state.currentTrick.length === 0) return;
+
     state.playedTricks[winner].push(state.currentTrick);
     state.currentTrick = [];
     state.turn = winner; 
@@ -419,20 +431,28 @@ export default function GameRoom() {
         {/* ===== SIDE COLUMN (우측 35%) ===== */}
         <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '2vmin', borderLeft: '0.2vmin solid rgba(0,0,0,0.1)', paddingLeft: '2vmin', height: '100%' }}>
           
-          {/* 1영역: 트랙 (위아래 여백 대폭 증가) */}
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.4)', padding: '4vmin 2vmin', borderRadius: '1.5vmin', position: 'relative', flexShrink: 0 }}>
-            <button onClick={resetTrackOnly} style={{ position: 'absolute', top: '1vmin', right: '1.5vmin', padding: '0.6vmin 1.2vmin', fontSize: '1.2vmin', cursor: 'pointer' }}>Reset Track</button>
-            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '3vmin' }}>
-               <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '0.4vmin', backgroundColor: '#8b7355', zIndex: 1 }} />
+          {/* 1영역: 트랙 (동그라미 비율 고정, 마커 위로 통합, 버튼 겹침 해결) */}
+          <div style={{ flex: 1.2, backgroundColor: 'rgba(255,255,255,0.4)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column' }}>
+            
+            {/* 💡 리셋 버튼을 트랙과 완전히 분리해서 위쪽에 배치 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'auto' }}>
+              <button onClick={resetTrackOnly} style={{ padding: '0.6vw 1vw', fontSize: '1vw', cursor: 'pointer' }}>Reset Track</button>
+            </div>
+            
+            {/* 트랙 라인 및 동그라미 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', marginTop: '3vw', marginBottom: '0.5vw' }}>
+               <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '0.3vw', backgroundColor: '#8b7355', zIndex: 1 }} />
                {[0,1,2,3,4,5,6,7,8,9,10].map(step => {
                   let text = '';
                   if (step === 2) text = 'I'; else if (step === 3) text = 'II'; else if (step === 4) text = 'III'; else if (step === 5) text = 'IV';
                   return (
                     <div key={step} onDragOver={e => e.preventDefault()} onDrop={e => handleDrop(e, 'track', { index: step })}
-                         style={{ width: '4vmin', height: '4vmin', backgroundColor: '#eaddcf', border: '0.3vmin solid #8b7355', borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8vmin' }}>
+                         // 💡 폭을 8%로 유동적으로 주되, 가로세로 비율(aspectRatio: 1)을 강제해서 절대 안 찌그러지게 만듦
+                         style={{ width: '8%', aspectRatio: '1', height: 'auto', backgroundColor: '#eaddcf', border: '0.2vw solid #8b7355', borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9vw', flexShrink: 0 }}>
                       {text}
-                      {state.syPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'sy'})} style={{position:'absolute', top:'-4vmin', background:'#1B375E', color:'#fff', padding:'0.4vmin 0.8vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>SY</div>}
-                      {state.jhPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'jh'})} style={{position:'absolute', bottom:'-4vmin', background:'#333636', color:'#fff', padding:'0.4vmin 0.8vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>JH</div>}
+                      {/* 💡 JH, SY 마커 둘 다 위로 올리되, 서로 가리지 않게 top 위치에 단차를 둠 */}
+                      {state.jhPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'jh'})} style={{position:'absolute', top:'-3.2vw', background:'#333636', color:'#fff', padding:'0.2vw 0.4vw', borderRadius:'0.3vw', fontSize:'0.7vw', cursor:'grab'}}>JH</div>}
+                      {state.syPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'sy'})} style={{position:'absolute', top:'-3.2vw', background:'#1B375E', color:'#fff', padding:'0.2vw 0.4vw', borderRadius:'0.3vw', fontSize:'0.7vw', cursor:'grab'}}>SY</div>}
                     </div>
                   );
                })}
@@ -468,27 +488,46 @@ export default function GameRoom() {
             </div>
             </div>
 
-          {/* 3영역: 런던 덱 교환 */}
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.3)', padding: '1.5vmin', borderRadius: '1.5vmin', display: 'flex', alignItems: 'center', gap: '2vmin', flexShrink: 0 }}>
-            <div>
-              <h4 style={{ margin: '0 0 1vmin 0', fontSize: '1.8vmin' }}>London Given</h4>
-              <div style={{ display: 'flex', gap: '0.8vmin' }}>
-                {state.givenToCity[myRole].map((c, i) => 
-                  renderCard(c, { width: '4vmin', height: '6vmin', fontSize: '2.5vmin' })
+          {/* 3영역 & 런던 덱 교환 및 플레이 순서 표시 */}
+          <div style={{ flex: 0.8, backgroundColor: 'rgba(255,255,255,0.3)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column', gap: '0.5vw', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8vw' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 0.5vw 0', fontSize: '1vw' }}>Cards Given to London</h4>
+                  <div style={{ display: 'flex', gap: '0.4vw' }}>
+                    {state.givenToCity[myRole].map((c, i) => 
+                      renderCard(c, { width: '2.5vw', aspectRatio: '2/3', fontSize: '1vw' })
+                    )}
+                  </div>
+                </div>
+                
+                {/* 💡 새로 추가된 트릭 플레이 순서(Trick Order) 표시 영역 */}
+                <div>
+                  <h4 style={{ margin: '0 0 0.3vw 0', fontSize: '0.9vw' }}>Current Trick Order</h4>
+                  <div style={{ fontSize: '0.9vw', fontWeight: 'bold', color: '#2c3e50' }}>
+                    {(() => {
+                      const cycle = state.leader === 'Jekyll' ? ['Jekyll', 'London', 'Hyde'] : ['Hyde', 'London', 'Jekyll'];
+                      // 트릭에 카드가 이미 놓였다면 첫 번째 놓은 사람 기준, 아직 안 놓였다면 현재 차례인 사람 기준
+                      const first = state.currentTrick.length > 0 ? state.currentTrick[0].playedBy : state.turn;
+                      const sIdx = cycle.indexOf(first);
+                      return `${cycle[sIdx]} → ${cycle[(sIdx + 1) % 3]} → ${cycle[(sIdx + 2) % 3]}`;
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center', padding: '0.5vw', backgroundColor: exchangeMode ? '#ffeaa7' : 'transparent', border: '0.1vw dashed #333', flex: 1, marginLeft: '1vw', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <h4 style={{ margin: '0 0 0.3vw 0', fontSize: '0.9vw' }}>London Deck ({state.cityDeck.length} left)</h4>
+                {exchangeMode ? (
+                   <p style={{ margin: 0, fontSize: '0.8vw', color: '#d35400' }}>Select to exchange or <span onClick={() => setExchangeMode(false)} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Cancel</span></p>
+                ) : (
+                   <button onClick={() => setExchangeMode(true)} disabled={state.cityDeck.length === 0} style={{ padding: '0.6vw 1vw', fontSize: '1vw', cursor: 'pointer' }}>Exchange Card</button>
                 )}
               </div>
             </div>
-
-            <div style={{ textAlign: 'center', padding: '1.5vmin', backgroundColor: exchangeMode ? '#ffeaa7' : 'transparent', border: '0.3vmin dashed #333', flex: 1, borderRadius: '1vmin' }}>
-              <h4 style={{ margin: '0 0 1vmin 0', fontSize: '1.8vmin' }}>London Deck ({state.cityDeck.length})</h4>
-              {exchangeMode ? (
-                 <p style={{ margin: 0, fontSize: '1.5vmin', color: '#d35400' }}>Select to exchange or <span onClick={() => setExchangeMode(false)} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Cancel</span></p>
-              ) : (
-                 <button onClick={() => setExchangeMode(true)} disabled={state.cityDeck.length === 0} style={{ padding: '0.8vmin 1.5vmin', fontSize: '1.5vmin', cursor: 'pointer', borderRadius: '0.5vmin' }}>Exchange Card</button>
-              )}
-            </div>
           </div>
-
+          
         </div>
       </div>
     </div>
