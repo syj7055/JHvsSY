@@ -429,7 +429,7 @@ export default function GameRoom() {
         </div>
 
         {/* ===== SIDE COLUMN (우측 35%) ===== */}
-        <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '2vmin', borderLeft: '0.2vmin solid rgba(0,0,0,0.1)', paddingLeft: '2vmin', height: '100%' }}>
+        <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '1vw', borderLeft: '0.2vw solid rgba(0,0,0,0.1)', paddingLeft: '1vw', height: '100%', overflowY: 'auto', paddingBottom: '1vw' }}>
           
           {/* 1영역: 트랙 (동그라미 비율 고정, 마커 위로 통합, 버튼 겹침 해결) */}
           <div style={{ flex: 'none', backgroundColor: 'rgba(255,255,255,0.4)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column' }}>
@@ -460,7 +460,7 @@ export default function GameRoom() {
           </div>
 
           {/* 2영역: 카드 그리드 Tracker (화면 꽉 차게, Potion 비율 완벽 유지) */}
-          <div style={{ flex: 'none', backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          <div style={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', backgroundColor: 'rgba(0,0,0,0.1)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column' }}>
             <h4 style={{ margin: '0 0 1vmin 0', fontSize: '2vmin', flexShrink: 0 }}>Card Tracker</h4>
             
             {/* 💡 수정 포인트: minmax(0, 1fr) 추가 및 rowGap을 분리하여 상하 여백 줄임 */}
