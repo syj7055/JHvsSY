@@ -432,7 +432,7 @@ export default function GameRoom() {
         <div style={{ width: '35%', display: 'flex', flexDirection: 'column', gap: '2vmin', borderLeft: '0.2vmin solid rgba(0,0,0,0.1)', paddingLeft: '2vmin', height: '100%' }}>
           
           {/* 1영역: 트랙 (동그라미 비율 고정, 마커 위로 통합, 버튼 겹침 해결) */}
-          <div style={{ flex: 1.2, backgroundColor: 'rgba(255,255,255,0.4)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 'none', backgroundColor: 'rgba(255,255,255,0.4)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column' }}>
             
             {/* 💡 리셋 버튼을 트랙과 완전히 분리해서 위쪽에 배치 */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'auto' }}>
@@ -489,8 +489,8 @@ export default function GameRoom() {
             </div>
 
           {/* 3영역 & 런던 덱 교환 및 플레이 순서 표시 */}
-          <div style={{ flex: 0.8, backgroundColor: 'rgba(255,255,255,0.3)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column', gap: '0.5vw', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+          <div style={{ flex: 'none', backgroundColor: 'rgba(255,255,255,0.3)', padding: '1vw', borderRadius: '0.8vw', display: 'flex', flexDirection: 'column', gap: '0.5vw', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8vw' }}>
                 <div>
@@ -517,7 +517,7 @@ export default function GameRoom() {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', padding: '0.5vw', backgroundColor: exchangeMode ? '#ffeaa7' : 'transparent', border: '0.1vw dashed #333', flex: 1, marginLeft: '1vw', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center', padding: '0.5vw 1vw', backgroundColor: exchangeMode ? '#ffeaa7' : 'transparent', border: '0.1vw dashed #333', flex: 1, marginLeft: '1vw', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignSelf: 'stretch', borderRadius: '0.5vw' }}>
                 <h4 style={{ margin: '0 0 0.3vw 0', fontSize: '0.9vw' }}>London Deck ({state.cityDeck.length} left)</h4>
                 {exchangeMode ? (
                    <p style={{ margin: 0, fontSize: '0.8vw', color: '#d35400' }}>Select to exchange or <span onClick={() => setExchangeMode(false)} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Cancel</span></p>
