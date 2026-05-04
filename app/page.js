@@ -440,7 +440,7 @@ export default function GameRoom() {
           </div>
 
           {/* 2영역: 카드 그리드 Tracker (화면 꽉 차게, Potion 비율 완벽 유지) */}
-          <div style={{ flex: None, backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          <div style={{ flex: 'none', backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
             <h4 style={{ margin: '0 0 1vmin 0', fontSize: '2vmin', flexShrink: 0 }}>Card Tracker</h4>
             
             {/* 💡 수정 포인트: minmax(0, 1fr) 추가 및 rowGap을 분리하여 상하 여백 줄임 */}
