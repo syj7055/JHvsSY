@@ -377,31 +377,33 @@ export default function GameRoom() {
           {/* 중단: Played Tricks (영역 비율 대폭 확대, 카드 크기 고정) */}
           <div style={{ display: 'flex', gap: '2vmin', flex: 1, minHeight: 0 }}>
             {['Jekyll', 'London', 'Hyde'].map(owner => (
-              <div key={owner} 
-                   onDragOver={e => e.preventDefault()} 
-                   onDrop={e => handleDrop(e, 'player_tricks', { target: owner })}
-                   style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.05)', padding: '2vmin', borderRadius: '1.5vmin', overflowY: 'auto' }}>
+                <div key={owner} 
+                    onDragOver={e => e.preventDefault()} 
+                    onDrop={e => handleDrop(e, 'player_tricks', { target: owner })}
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.05)', padding: '2vmin', borderRadius: '1.5vmin', overflowY: 'auto' }}>
                 <h4 style={{ margin: '0 0 2vmin 0', textAlign: 'center', fontSize: '2vmin' }}>{owner} Tricks</h4>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1vmin', alignContent: 'start' }}>
-                  {state.playedTricks[owner].map((trickArr, idx) => {
+                {/* 💡 수정 포인트: minmax(0, 1fr) 추가 및 반응형 폰트 추가 */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1vw', alignContent: 'start' }}>
+                    {state.playedTricks[owner].map((trickArr, idx) => {
                     const isLastLondonTrick = owner === 'London' && idx === state.playedTricks.London.length - 1;
                     return (
-                      <div key={idx} 
-                           draggable={isLastLondonTrick}
-                           onDragStart={e => isLastLondonTrick && handleDragStart(e, 'london_trick', {})}
-                           style={{ display: 'flex', gap: '0.3vmin', padding: '0.5vmin', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '0.8vmin', cursor: isLastLondonTrick ? 'grab' : 'default', justifyContent: 'center' }}>
+                        <div key={idx} 
+                            draggable={isLastLondonTrick}
+                            onDragStart={e => isLastLondonTrick && handleDragStart(e, 'london_trick', {})}
+                            style={{ display: 'flex', gap: '3%', padding: '4%', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '0.8vmin', cursor: isLastLondonTrick ? 'grab' : 'default', justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}>
                         {trickArr.map((t, i) => 
-                          // 딴 트릭 카드의 절대적 크기 고정
-                          renderCard(t.card, { width: '4vmin', height: '6vmin', fontSize: '2.5vmin', borderWidth: '0.2vmin' })
+                            <div key={i} style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+                            {renderCard(t.card, { width: '90%', height: 'auto', aspectRatio: '2/3', fontSize: 'clamp(1rem, 1.5vw, 2rem)', borderWidth: '0.2vmin' })}
+                            </div>
                         )}
-                      </div>
+                        </div>
                     );
-                  })}
+                    })}
                 </div>
-              </div>
+                </div>
             ))}
-          </div>
+            </div>
 
           {/* 하단: My Hand (영역 비율 축소, 카드 크기 조정) */}
           <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '1.5vmin', borderRadius: '1.5vmin', flexShrink: 0 }}>
@@ -427,7 +429,7 @@ export default function GameRoom() {
                   if (step === 2) text = 'I'; else if (step === 3) text = 'II'; else if (step === 4) text = 'III'; else if (step === 5) text = 'IV';
                   return (
                     <div key={step} onDragOver={e => e.preventDefault()} onDrop={e => handleDrop(e, 'track', { index: step })}
-                         style={{ width: '4vmin', height: '4vmin', backgroundColor: '#eaddcf', border: '0.3vmin solid #8b7355', borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8vmin', fontFamily: 'Georgia, serif' }}>
+                         style={{ width: '4vmin', height: '4vmin', backgroundColor: '#eaddcf', border: '0.3vmin solid #8b7355', borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.8vmin' }}>
                       {text}
                       {state.syPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'sy'})} style={{position:'absolute', top:'-4vmin', background:'#1B375E', color:'#fff', padding:'0.4vmin 0.8vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>SY</div>}
                       {state.jhPosition === step && <div draggable onDragStart={e=>handleDragStart(e, 'pawn', {pawn: 'jh'})} style={{position:'absolute', bottom:'-4vmin', background:'#333636', color:'#fff', padding:'0.4vmin 0.8vmin', borderRadius:'0.5vmin', fontSize:'1.2vmin', cursor:'grab'}}>JH</div>}
@@ -438,32 +440,34 @@ export default function GameRoom() {
           </div>
 
           {/* 2영역: 카드 그리드 Tracker (화면 꽉 차게, Potion 비율 완벽 유지) */}
-          <div style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-             <h4 style={{ margin: '0 0 2vmin 0', fontSize: '2vmin' }}>Card Tracker</h4>
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '1vmin', flex: 1 }}>
-               {['Fear', 'Ruse', 'Manipulation', 'Potion'].map((color) => {
-                 const isPotion = color === 'Potion';
-                 const startVal = isPotion ? 3 : 1;
-                 const endVal = isPotion ? 6 : 8;
-                 
-                 return Array.from({length: endVal - startVal + 1}, (_, i) => i + startVal).map(val => {
-                   const valueStr = isPotion ? `${val}+` : val;
-                   const allPlayed = [...state.playedTricks.Jekyll, ...state.playedTricks.Hyde, ...state.playedTricks.London].flat();
-                   
-                   const isUsed = state.hands[myRole].some(c => c.color === color && c.value == valueStr) ||
-                                  state.currentTrick.some(t => t.card.color === color && t.card.value == valueStr) ||
-                                  allPlayed.some(t => t.card.color === color && t.card.value == valueStr);
-                   
-                   return (
-                     <div key={color + val} style={{ gridColumn: val, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        {/* Tracker 안의 카드는 Potion 포함 모든 카드가 엄격하게 같은 크기를 가짐 */}
-                        {renderCard( { color, value: valueStr }, { width: '4.5vmin', height: '6.7vmin', fontSize: '2.5vmin' }, isUsed )}
-                     </div>
-                   );
-                 });
-               })}
-             </div>
-          </div>
+          <div style={{ flex: None, backgroundColor: 'rgba(0,0,0,0.1)', padding: '2vmin', borderRadius: '1.5vmin', minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            <h4 style={{ margin: '0 0 1vmin 0', fontSize: '2vmin', flexShrink: 0 }}>Card Tracker</h4>
+            
+            {/* 💡 수정 포인트: minmax(0, 1fr) 추가 및 rowGap을 분리하여 상하 여백 줄임 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', columnGap: '0.8vw', rowGap: '0.5vmin', alignContent: 'start', flex: 1 }}>
+                {['Fear', 'Ruse', 'Manipulation', 'Potion'].map((color) => {
+                const isPotion = color === 'Potion';
+                const startVal = isPotion ? 3 : 1;
+                const endVal = isPotion ? 6 : 8;
+                
+                return Array.from({length: endVal - startVal + 1}, (_, i) => i + startVal).map(val => {
+                    const valueStr = isPotion ? `${val}+` : val;
+                    const allPlayed = [...state.playedTricks.Jekyll, ...state.playedTricks.Hyde, ...state.playedTricks.London].flat();
+                    
+                    const isUsed = state.hands[myRole].some(c => c.color === color && c.value == valueStr) ||
+                                    state.currentTrick.some(t => t.card.color === color && t.card.value == valueStr) ||
+                                    allPlayed.some(t => t.card.color === color && t.card.value == valueStr);
+                    
+                    return (
+                    <div key={color + val} style={{ gridColumn: val, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
+                        {/* 💡 폰트를 clamp로 묶어 가로 축소 시 자연스럽게 작아지게 만듦 */}
+                        {renderCard( { color, value: valueStr }, { width: '100%', height: 'auto', aspectRatio: '2/3', fontSize: 'clamp(0.8rem, 1.2vw, 1.8rem)' }, isUsed )}
+                    </div>
+                    );
+                });
+                })}
+            </div>
+            </div>
 
           {/* 3영역: 런던 덱 교환 */}
           <div style={{ backgroundColor: 'rgba(255,255,255,0.3)', padding: '1.5vmin', borderRadius: '1.5vmin', display: 'flex', alignItems: 'center', gap: '2vmin', flexShrink: 0 }}>
