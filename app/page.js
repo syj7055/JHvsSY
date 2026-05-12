@@ -48,14 +48,14 @@ export default function GameRoom() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
-  const initNewGame = async (leader, isChapter11 = false) => {
+  const initNewGame = async (leader, isChapter9 = false) => {
     const deck = generateDeck();
-    let jekyllHand, hydeHand, chapter11ExtraCards = [];
+    let jekyllHand, hydeHand, chapter9ExtraCards = [];
     
-    if (isChapter11) {
+    if (isChapter9) {
       jekyllHand = deck.splice(0, 11);
       hydeHand = deck.splice(0, 11);
-      chapter11ExtraCards = deck.splice(0, 2);
+      chapter9ExtraCards = deck.splice(0, 2);
     } else {
       jekyllHand = deck.splice(0, 12);
       hydeHand = deck.splice(0, 12);
@@ -68,8 +68,8 @@ export default function GameRoom() {
       leader: leader,
       turn: leader,
       phase: 'give_cards',
-      isChapter11: isChapter11,
-      chapter11ExtraCards: chapter11ExtraCards,
+      isChapter9: isChapter9,
+      chapter9ExtraCards: chapter9ExtraCards,
       currentTrick: [],
       playedTricks: { Jekyll: [], Hyde: [], London: [] },
       hands: { Jekyll: jekyllHand, Hyde: hydeHand },
@@ -98,7 +98,7 @@ export default function GameRoom() {
   };
 
   const confirmGiveCards = async () => {
-    const requiredCards = game.game_state.isChapter11 ? 3 : 4;
+    const requiredCards = game.game_state.isChapter9 ? 3 : 4;
     if (selectedForCity.length !== requiredCards) return;
     
     const { data } = await supabase.from('games').select('game_state').eq('id', game.id).single();
@@ -115,8 +115,8 @@ export default function GameRoom() {
     
     if (state.givenToCity[otherRole] && state.givenToCity[otherRole].length === requiredCards) {
       let combined = [...state.givenToCity[myRole], ...state.givenToCity[otherRole]];
-      if (state.isChapter11 && state.chapter11ExtraCards) {
-        combined = [...combined, ...state.chapter11ExtraCards];
+      if (state.isChapter9 && state.chapter9ExtraCards) {
+        combined = [...combined, ...state.chapter9ExtraCards];
       }
       combined.sort(() => Math.random() - 0.5); 
       state.cityDeck = combined;
@@ -300,7 +300,7 @@ export default function GameRoom() {
 
   // Phase 1: 카드 12장(혹은 11장) 분배 -> 4장(혹은 3장) 선택
   if (state.phase === 'give_cards') {
-    const requiredCards = state.isChapter11 ? 3 : 4;
+    const requiredCards = state.isChapter9 ? 3 : 4;
     return (
       <div style={{ padding: '2vmin', width: '80vw', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <h2 style={{ fontSize: '4vmin', margin: '2vmin 0' }}>Select {requiredCards} cards to give to London</h2>
@@ -334,8 +334,8 @@ export default function GameRoom() {
         <div style={{ display: 'flex', gap: '1.5vmin', flexWrap: 'wrap', justifyContent: 'center' }}>
           <button onClick={() => initNewGame('Jekyll', false)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#333', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead)</button>
           <button onClick={() => initNewGame('Hyde', false)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#555', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead)</button>
-          <button onClick={() => initNewGame('Jekyll', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#2c3e50', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead - Ch 11)</button>
-          <button onClick={() => initNewGame('Hyde', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#8e44ad', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead - Ch 11)</button>
+          <button onClick={() => initNewGame('Jekyll', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#2c3e50', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead - Ch 9)</button>
+          <button onClick={() => initNewGame('Hyde', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#8e44ad', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead - Ch 9)</button>
         </div>
         <h2 style={{ margin: 0, fontWeight: 'normal', fontSize: '3vmin' }}>
           {state.turn === myRole ? "Your turn" : `Waiting for ${state.turn}`}
