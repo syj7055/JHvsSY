@@ -48,10 +48,18 @@ export default function GameRoom() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
-  const initNewGame = async (leader) => {
+  const initNewGame = async (leader, isChapter11 = false) => {
     const deck = generateDeck();
-    const jekyllHand = deck.splice(0, 12);
-    const hydeHand = deck.splice(0, 12);
+    let jekyllHand, hydeHand, chapter11ExtraCards = [];
+    
+    if (isChapter11) {
+      jekyllHand = deck.splice(0, 11);
+      hydeHand = deck.splice(0, 11);
+      chapter11ExtraCards = deck.splice(0, 2);
+    } else {
+      jekyllHand = deck.splice(0, 12);
+      hydeHand = deck.splice(0, 12);
+    }
 
     const currentJh = game?.game_state?.jhPosition !== undefined ? game.game_state.jhPosition : 2;
     const currentSy = game?.game_state?.syPosition !== undefined ? game.game_state.syPosition : 0;
@@ -60,6 +68,8 @@ export default function GameRoom() {
       leader: leader,
       turn: leader,
       phase: 'give_cards',
+      isChapter11: isChapter11,
+      chapter11ExtraCards: chapter11ExtraCards,
       currentTrick: [],
       playedTricks: { Jekyll: [], Hyde: [], London: [] },
       hands: { Jekyll: jekyllHand, Hyde: hydeHand },
@@ -88,7 +98,8 @@ export default function GameRoom() {
   };
 
   const confirmGiveCards = async () => {
-    if (selectedForCity.length !== 4) return;
+    const requiredCards = game.game_state.isChapter11 ? 3 : 4;
+    if (selectedForCity.length !== requiredCards) return;
     
     const { data } = await supabase.from('games').select('game_state').eq('id', game.id).single();
     if (!data) return;
@@ -102,8 +113,11 @@ export default function GameRoom() {
 
     const otherRole = myRole === 'Jekyll' ? 'Hyde' : 'Jekyll';
     
-    if (state.givenToCity[otherRole] && state.givenToCity[otherRole].length === 4) {
+    if (state.givenToCity[otherRole] && state.givenToCity[otherRole].length === requiredCards) {
       let combined = [...state.givenToCity[myRole], ...state.givenToCity[otherRole]];
+      if (state.isChapter11 && state.chapter11ExtraCards) {
+        combined = [...combined, ...state.chapter11ExtraCards];
+      }
       combined.sort(() => Math.random() - 0.5); 
       state.cityDeck = combined;
       state.phase = 'playing';
@@ -284,12 +298,13 @@ export default function GameRoom() {
     );
   }
 
-  // Phase 1: 카드 12장 분배 -> 4장 선택 (6x2 그리드 배열 완료)
+  // Phase 1: 카드 12장(혹은 11장) 분배 -> 4장(혹은 3장) 선택
   if (state.phase === 'give_cards') {
+    const requiredCards = state.isChapter11 ? 3 : 4;
     return (
       <div style={{ padding: '2vmin', width: '80vw', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h2 style={{ fontSize: '4vmin', margin: '2vmin 0' }}>Select 4 cards to give to London</h2>
-        <p style={{ fontSize: '2.5vmin', marginBottom: '3vmin' }}>Waiting for opponent status: {state.givenToCity[myRole === 'Jekyll' ? 'Hyde' : 'Jekyll']?.length === 4 ? "Ready" : "Selecting"}</p>
+        <h2 style={{ fontSize: '4vmin', margin: '2vmin 0' }}>Select {requiredCards} cards to give to London</h2>
+        <p style={{ fontSize: '2.5vmin', marginBottom: '3vmin' }}>Waiting for opponent status: {state.givenToCity[myRole === 'Jekyll' ? 'Hyde' : 'Jekyll']?.length === requiredCards ? "Ready" : "Selecting"}</p>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '2vmin', justifyItems: 'center', margin: '2vmin auto' }}>
           {state.hands[myRole].map((card, idx) => {
@@ -298,13 +313,13 @@ export default function GameRoom() {
               <div key={idx}>
                 {renderCard(card, { width: '12vmin', height: '18vmin', fontSize: '7vmin' }, false, isSelected, () => {
                   if (isSelected) setSelectedForCity(prev => prev.filter(i => i !== idx));
-                  else if (selectedForCity.length < 4) setSelectedForCity(prev => [...prev, idx]);
+                  else if (selectedForCity.length < requiredCards) setSelectedForCity(prev => [...prev, idx]);
                 })}
               </div>
             );
           })}
         </div>
-        <button onClick={confirmGiveCards} disabled={selectedForCity.length !== 4} style={{ padding: '2vmin 4vmin', fontSize: '2.5vmin', cursor: 'pointer', borderRadius: '1vmin', marginTop: '3vmin' }}>Confirm 4 Cards</button>
+        <button onClick={confirmGiveCards} disabled={selectedForCity.length !== requiredCards} style={{ padding: '2vmin 4vmin', fontSize: '2.5vmin', cursor: 'pointer', borderRadius: '1vmin', marginTop: '3vmin' }}>Confirm {requiredCards} Cards</button>
       </div>
     );
   }
@@ -316,9 +331,11 @@ export default function GameRoom() {
       {/* 헤더 바 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '0.3vmin solid rgba(0,0,0,0.2)', paddingBottom: '1vmin', flexShrink: 0 }}>
         <h2 style={{ margin: 0, fontSize: '3vmin' }}>You are {myRole}</h2>
-        <div style={{ display: 'flex', gap: '1.5vmin' }}>
-          <button onClick={() => initNewGame('Jekyll')} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#333', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead)</button>
-          <button onClick={() => initNewGame('Hyde')} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#555', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead)</button>
+        <div style={{ display: 'flex', gap: '1.5vmin', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button onClick={() => initNewGame('Jekyll', false)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#333', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead)</button>
+          <button onClick={() => initNewGame('Hyde', false)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#555', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead)</button>
+          <button onClick={() => initNewGame('Jekyll', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#2c3e50', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead - Ch 11)</button>
+          <button onClick={() => initNewGame('Hyde', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#8e44ad', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead - Ch 11)</button>
         </div>
         <h2 style={{ margin: 0, fontWeight: 'normal', fontSize: '3vmin' }}>
           {state.turn === myRole ? "Your turn" : `Waiting for ${state.turn}`}
