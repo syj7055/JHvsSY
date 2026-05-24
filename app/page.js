@@ -48,14 +48,18 @@ export default function GameRoom() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
-  const initNewGame = async (leader, isChapter9 = false) => {
+  const initNewGame = async (leader, isChapter9 = false, isChapter10 = false) => {
     const deck = generateDeck();
-    let jekyllHand, hydeHand, chapter9ExtraCards = [];
+    let jekyllHand, hydeHand, chapter9ExtraCards = [], chapter10ExtraCards = [];
     
     if (isChapter9) {
       jekyllHand = deck.splice(0, 11);
       hydeHand = deck.splice(0, 11);
       chapter9ExtraCards = deck.splice(0, 2);
+    } else if (isChapter10) {
+      jekyllHand = deck.splice(0, 12);
+      hydeHand = deck.splice(0, 12);
+      chapter10ExtraCards = deck.splice(0, 4); // 남은 4장 보관
     } else {
       jekyllHand = deck.splice(0, 12);
       hydeHand = deck.splice(0, 12);
@@ -69,7 +73,9 @@ export default function GameRoom() {
       turn: leader,
       phase: 'give_cards',
       isChapter9: isChapter9,
+      isChapter10: isChapter10,
       chapter9ExtraCards: chapter9ExtraCards,
+      chapter10ExtraCards: chapter10ExtraCards,
       currentTrick: [],
       playedTricks: { Jekyll: [], Hyde: [], London: [] },
       hands: { Jekyll: jekyllHand, Hyde: hydeHand },
@@ -304,6 +310,17 @@ export default function GameRoom() {
     return (
       <div style={{ padding: '2vmin', width: '80vw', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <h2 style={{ fontSize: '4vmin', margin: '2vmin 0' }}>Select {requiredCards} cards to give to London</h2>
+        
+        {state.isChapter10 && state.chapter10ExtraCards?.length > 0 && (
+          <div style={{ backgroundColor: 'rgba(0,0,0,0.05)', padding: '2vmin', borderRadius: '1.5vmin', marginBottom: '3vmin', border: '0.2vmin solid #ccc' }}>
+            <h4 style={{ margin: '0 0 1.5vmin 0', fontSize: '2.5vmin' }}>Chapter 10: Top of Removed Pile</h4>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              {renderCard(state.chapter10ExtraCards[0], { width: '10vmin', height: '15vmin', fontSize: '6vmin' })}
+            </div>
+            <p style={{ fontSize: '1.8vmin', color: '#666', marginTop: '1vmin' }}>This card is one of the 4 removed cards.</p>
+          </div>
+        )}
+
         <p style={{ fontSize: '2.5vmin', marginBottom: '3vmin' }}>Waiting for opponent status: {state.givenToCity[myRole === 'Jekyll' ? 'Hyde' : 'Jekyll']?.length === requiredCards ? "Ready" : "Selecting"}</p>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '2vmin', justifyItems: 'center', margin: '2vmin auto' }}>
@@ -336,6 +353,8 @@ export default function GameRoom() {
           <button onClick={() => initNewGame('Hyde', false)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#555', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead)</button>
           <button onClick={() => initNewGame('Jekyll', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#2c3e50', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead - Ch 9)</button>
           <button onClick={() => initNewGame('Hyde', true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#8e44ad', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead - Ch 9)</button>
+          <button onClick={() => initNewGame('Jekyll', false, true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#27ae60', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Jekyll Lead - Ch 10)</button>
+          <button onClick={() => initNewGame('Hyde', false, true)} style={{ padding: '1vmin 1.5vmin', fontSize: '1.5vmin', background: '#e67e22', color: '#fff', border: 'none', borderRadius: '0.5vmin', cursor: 'pointer' }}>New Round (Hyde Lead - Ch 10)</button>
         </div>
         <h2 style={{ margin: 0, fontWeight: 'normal', fontSize: '3vmin' }}>
           {state.turn === myRole ? "Your turn" : `Waiting for ${state.turn}`}
